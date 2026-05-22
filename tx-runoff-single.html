@@ -811,9 +811,10 @@ const ALL_BUCKETS = [
 ];
 
 // Distribute First Round: three first-round candidate groups (Cornyn,
-// Paxton, Hunt + third parties), each with a Cornyn/Paxton runoff-share
-// pair that auto-normalizes to 100. Defaults: Cornyn voters mostly stick,
-// Paxton voters mostly stick, Hunt voters split evenly.
+// Paxton, Hunt + third parties), each with Cornyn / Paxton / Did-not-vote
+// runoff allocations that auto-normalize to 100. DNV voters drop out of
+// the runoff electorate entirely, so increasing DNV shrinks the projected
+// turnout.
 const FIRST_ROUND_GROUPS = [
   { id: 'cornyn', label: 'Cornyn voters' },
   { id: 'paxton', label: 'Paxton voters' },
@@ -821,9 +822,9 @@ const FIRST_ROUND_GROUPS = [
 ];
 
 const FIRST_ROUND_DEFAULT = {
-  cornyn: { cornyn: 95, paxton: 5 },
-  paxton: { cornyn: 5,  paxton: 95 },
-  hunt:   { cornyn: 50, paxton: 50 }
+  cornyn: { cornyn: 75, paxton: 5,  dnv: 20 },
+  paxton: { cornyn: 5,  paxton: 75, dnv: 20 },
+  hunt:   { cornyn: 20, paxton: 45, dnv: 35 }
 };
 
 const TRUMP_BUCKETS = [{
@@ -859,28 +860,46 @@ const BRACKET_SUPPORT_DEFAULTS = {
 };
 
 /* ──────────── MODEL ────────────
-   Real data baseline + slider deviations weighted by actual data shares.
+   Distribute First Round drives the runoff baseline. For each first-round
+   group g (Cornyn / Paxton / Hunt + others) the user sets three numbers
+   that sum to 100: % to Cornyn, % to Paxton, % did-not-vote.
 
-   Support / Electorate / Turnout (per category):
-     Each category gives its own Cornyn h2h estimate via a weighted avg:
-       h2h_cat = Σ_b (electorate_b × turnout_b × support_b) / Σ_b (electorate_b × turnout_b)
-     The category's shift is current h2h − baseline (at data defaults) h2h.
-     Three categories (Income / Education / Geography) summed = total support
-     shift. Electorate slider auto-normalizes to 100% within its category.
+     runoff Cornyn votes = Σ_g (first-round votes_g × cornyn_g / 100)
+     runoff Paxton votes = Σ_g (first-round votes_g × paxton_g / 100)
+     runoff total        = (above two summed) — DNV voters drop out
 
-   Trump endorsement:
-     (reject − embrace) / total × 30% scalar. Max ±30 pp swing if all the
-     way to one side.
+   On top of that base h2h, Support and Trump add pp shifts.
 
-   Distribute First Round:
-     Each group's slider deviation × first-round share (Cornyn 42.0%,
-     Paxton 40.5%, Hunt / 3p 17.4%). */
+   At the user-supplied defaults this projects ~801K Cornyn vs ~873K Paxton
+   = Cornyn 47.86% (Paxton +4.28 pp) with ~77% of first-round turnout. */
 function project(s) {
-  const baseline = s.baseline || { cornynPct: 50, paxtonPct: 50, cornynVotes: 0, paxtonVotes: 0 };
+  const baseline = s.baseline || {
+    cornynFirstRound: 0, paxtonFirstRound: 0, huntFirstRound: 0,
+    firstRoundCornynPct: 50
+  };
   const defaults = s.defaults || null;
-  const frShares = s.firstRoundShares || { cornyn: 0.42, paxton: 0.405, hunt: 0.175 };
 
-  // Cornyn h2h share for a category, weighted by (electorate × turnout).
+  // Runoff vote counts from the 3×3 redistribution matrix.
+  const fr = s.firstRoundDistribute;
+  const cFR = +baseline.cornynFirstRound || 0;
+  const pFR = +baseline.paxtonFirstRound || 0;
+  const hFR = +baseline.huntFirstRound   || 0;
+  const runoffCornyn =
+      cFR * (fr.cornyn.cornyn / 100)
+    + pFR * (fr.paxton.cornyn / 100)
+    + hFR * (fr.hunt.cornyn   / 100);
+  const runoffPaxton =
+      cFR * (fr.cornyn.paxton / 100)
+    + pFR * (fr.paxton.paxton / 100)
+    + hFR * (fr.hunt.paxton   / 100);
+  const runoffTotal = runoffCornyn + runoffPaxton;
+  const distributionCornynPct = runoffTotal > 0 ? (runoffCornyn / runoffTotal) * 100 : 50;
+  // Distribute's pp effect relative to first-round h2h, applied uniformly
+  // across counties on the map.
+  const distributeShift = distributionCornynPct - (+baseline.firstRoundCornynPct || 50);
+
+  // Support — three independent views (Income / Education / Geography),
+  // each summing to 100% of the electorate. Cornyn h2h via weighted avg.
   const catH2H = (buckets, demoState) => {
     let num = 0, den = 0;
     for (const b of buckets) {
@@ -901,23 +920,16 @@ function project(s) {
     + catShift(EDU_BUCKETS)
     + catShift(GEO_BUCKETS);
 
-  // Trump endorsement net shift, max ±30 pp.
+  // Trump endorsement net shift, scalar 0.30 ⇒ max ±30 pp.
   const tSum = s.trumpShares.embrace + s.trumpShares.irrelevant + s.trumpShares.reject || 1;
   const trumpShift = (s.trumpShares.reject - s.trumpShares.embrace) / tSum * 100 * 0.30;
 
-  // Distribute First Round: deviation × first-round share per group.
-  const fr = s.firstRoundDistribute;
-  const distributeShift =
-      (fr.cornyn.cornyn - FIRST_ROUND_DEFAULT.cornyn.cornyn) * frShares.cornyn
-    + (fr.paxton.cornyn - FIRST_ROUND_DEFAULT.paxton.cornyn) * frShares.paxton
-    + (fr.hunt.cornyn   - FIRST_ROUND_DEFAULT.hunt.cornyn)   * frShares.hunt;
-
   const cornynPct = Math.max(0, Math.min(100,
-    baseline.cornynPct + supportShift + trumpShift + distributeShift
+    distributionCornynPct + supportShift + trumpShift
   ));
   const paxtonPct = 100 - cornynPct;
 
-  const totalVotes = baseline.cornynVotes + baseline.paxtonVotes;
+  const totalVotes = Math.round(runoffTotal);
   const totalCornynVotes = Math.round(totalVotes * cornynPct / 100);
   const totalPaxtonVotes = totalVotes - totalCornynVotes;
 
@@ -928,10 +940,7 @@ function project(s) {
     totalPaxtonVotes,
     supportShift,
     trumpShift,
-    distributeShift,
-    // Cornyn pct shift from baseline → margin shift = 2× this. Used by the
-    // map to retint every county/precinct on slider changes.
-    marginShift: 2 * (cornynPct - baseline.cornynPct)
+    distributeShift
   };
 }
 
@@ -1394,7 +1403,14 @@ function TXRunoffForecast() {
           cornynPct,
           paxtonPct: 100 - cornynPct,
           cornynVotes: Math.round(swCornynVotes),
-          paxtonVotes: Math.round(swPaxtonVotes)
+          paxtonVotes: Math.round(swPaxtonVotes),
+          // First-round totals — used by project() to apply the runoff
+          // redistribution model (Cornyn / Paxton / Hunt groups × DNV).
+          cornynFirstRound: frC,
+          paxtonFirstRound: frP,
+          huntFirstRound:   frOther,
+          firstRoundCornynPct: (frC + frP) > 0 ? (frC / (frC + frP)) * 100 : 50,
+          firstRoundTotal: frTotal
         },
         defaults: dataDefaults,
         firstRoundShares
@@ -1405,16 +1421,23 @@ function TXRunoffForecast() {
     return () => { cancelled = true; };
   }, []);
 
-  // Set one half of a (Cornyn, Paxton) pair; auto-clamp the other to 100−v.
+  // Set one of (cornyn, paxton, dnv) for a group; the other two shrink/grow
+  // proportionally to keep the triple at 100.
   const updateFirstRound = (groupId, which, value) => {
     const v = Math.max(0, Math.min(100, value));
-    setFirstRoundDistribute(prev => ({
-      ...prev,
-      [groupId]: {
-        [which]: v,
-        [which === 'cornyn' ? 'paxton' : 'cornyn']: 100 - v
+    setFirstRoundDistribute(prev => {
+      const group = prev[groupId];
+      const others = ['cornyn', 'paxton', 'dnv'].filter(k => k !== which);
+      const otherSum = others.reduce((s, k) => s + (group[k] || 0), 0);
+      const remainder = Math.max(0, 100 - v);
+      const nextGroup = { ...group, [which]: v };
+      if (otherSum > 0) {
+        others.forEach(k => { nextGroup[k] = (group[k] / otherSum) * remainder; });
+      } else {
+        others.forEach(k => { nextGroup[k] = remainder / others.length; });
       }
-    }));
+      return { ...prev, [groupId]: nextGroup };
+    });
   };
 
   // Three update modes:
@@ -1725,6 +1748,14 @@ function TXRunoffForecast() {
               max: 100, step: 1,
               suffix: "%",
               color: "#dc2626"
+            }),
+            /*#__PURE__*/React.createElement(SliderRow, {
+              label: "→ Did not vote",
+              value: firstRoundDistribute[g.id].dnv,
+              onChange: v => updateFirstRound(g.id, 'dnv', v),
+              max: 100, step: 1,
+              suffix: "%",
+              color: "#737373"
             })
           )
         ),
