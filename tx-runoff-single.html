@@ -1228,7 +1228,7 @@ function TexasMap({ geojson, featureAdjustedMargins }) {
             `<div class="tx-popup-row tx-popup-margin"><span>Margin</span><b>${m > 0 ? "+" : ""}${m.toFixed(1)} pp ${m > 0 ? "→ Cornyn" : m < 0 ? "→ Paxton" : ""}</b></div>`
           );
         } else {
-          lines.push(`<div class="tx-popup-row"><span>No projection</span></div>`);
+          lines.push(`<div class="tx-popup-row"><span>No data</span></div>`);
         }
         popup.setLngLat(e.lngLat).setHTML(lines.join("")).addTo(map);
       };
@@ -1295,7 +1295,7 @@ function TXRunoffForecast() {
 
   // One-shot data load: fetch the merged geojson and the precinct CSV,
   // join CSV rows to features (both counties and precincts), compute the
-  // statewide baseline projection AND per-bracket defaults, then override
+  // statewide baseline estimate AND per-bracket defaults, then override
   // the demo state so every slider starts where the data says it should.
   useEffect(() => {
     let cancelled = false;
@@ -1365,7 +1365,7 @@ function TXRunoffForecast() {
         hunt:   frOther / frTotal
       } : { cornyn: 0.42, paxton: 0.405, hunt: 0.175 };
 
-      // Stamp margin / projection fields onto the geojson features.
+      // Stamp margin and data fields onto the geojson features.
       // Also assign a stable numeric id so MapLibre setFeatureState can
       // target each feature for slider-driven retinting.
       for (let i = 0; i < gj.features.length; i++) {
@@ -1627,19 +1627,19 @@ function TXRunoffForecast() {
     pct: result.cornynPct,
     votes: result.totalCornynVotes,
     color: "#ca8a04",
-    avatar: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/John_Cornyn_official_senate_portrait.jpg/250px-John_Cornyn_official_senate_portrait.jpg"
+    avatar: "cornyn.jpg"
   }), /*#__PURE__*/React.createElement(CandRow, {
     name: "Ken Paxton",
     sub: "Trump-endorsed challenger",
     pct: result.paxtonPct,
     votes: result.totalPaxtonVotes,
     color: "#dc2626",
-    avatar: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Ken_Paxton_by_Gage_Skidmore.jpg/250px-Ken_Paxton_by_Gage_Skidmore.jpg"
+    avatar: "paxton.jpg"
   })), /*#__PURE__*/React.createElement("div", {
     className: "margin-summary"
   }, /*#__PURE__*/React.createElement("div", {
     className: "margin-summary-label"
-  }, "Starting Margin"), /*#__PURE__*/React.createElement("div", {
+  }, "Margin"), /*#__PURE__*/React.createElement("div", {
     className: `margin-summary-name ${winnerClass}`
   }, winner), /*#__PURE__*/React.createElement("div", {
     className: `margin-summary-value ${winnerClass}`
@@ -1652,9 +1652,7 @@ function TXRunoffForecast() {
     className: "map-card-head"
   }, /*#__PURE__*/React.createElement("div", {
     className: "vh-card-title"
-  }, "Projection by County"), /*#__PURE__*/React.createElement("div", {
-    className: "vh-card-sub"
-  }, "ArcGIS Human Geography basemap · county margin layer pending")), /*#__PURE__*/React.createElement(TexasMap, { geojson: mapData?.geojson, featureAdjustedMargins }))),
+  }, "Margin by County")), /*#__PURE__*/React.createElement(TexasMap, { geojson: mapData?.geojson, featureAdjustedMargins }))),
 
   /* ──────────── RIGHT COLUMN ──────────── */
   /*#__PURE__*/React.createElement("div", {
