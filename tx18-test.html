@@ -771,10 +771,10 @@ const GREEN_RAMP = [
 
 /* ──────────── BUCKETS ──────────── */
 const RACE_BUCKETS = [
-  { id: 'white',    label: 'White (non-Hispanic)' },
-  { id: 'hispanic', label: 'Hispanic (any race)' },
-  { id: 'black',    label: 'Black (non-Hispanic)' },
-  { id: 'other',    label: 'Other / multi-race' }
+  { id: 'white',    label: 'White voters' },
+  { id: 'hispanic', label: 'Hispanic voters' },
+  { id: 'black',    label: 'Black voters' },
+  { id: 'other',    label: 'Other voters' }
 ];
 
 const FIRST_ROUND_GROUPS = [
@@ -1455,9 +1455,9 @@ function TX18RunoffForecast() {
     ref: rightColRef,
     className: "right-col"
   },
-    // Card 1: Race — White / Hispanic / Black / Other × Support / Electorate / Turnout
+    // Card 1: Demographical Breakdown — White / Hispanic / Black / Other × Support / Electorate / Turnout
     /*#__PURE__*/React.createElement(CollapsibleCard, {
-      title: "Race",
+      title: "Demographical Breakdown",
       defaultOpen: true
     },
       /*#__PURE__*/React.createElement(SubSection, {
