@@ -1,0 +1,1970 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>TX Senate Runoff Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+    <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <style>
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #f7f7f9;
+}
+
+.vh-root {
+  --text-primary: #1a1a1a;
+  --text-secondary: #4a4a4a;
+  --text-muted: #737373;
+  --stroke-soft: #e5e5e5;
+  --bg-elevated: #ffffff;
+  --menu-bg: #ffffff;
+  --menu-border: #dcdce7;
+  --card-shadow: 0 18px 44px rgba(23, 25, 38, 0.08);
+  --vh-text-xs: 0.75rem;
+  --vh-text-sm: 0.875rem;
+  --vh-button-radius-lg: 10px;
+  --cornyn-tint: #fef3c7;
+  --cornyn-border: #ca8a04;
+  --cornyn-strong: #a16207;
+  --paxton-tint: #fee2e2;
+  --paxton-border: #dc2626;
+  --paxton-strong: #991b1b;
+  --margin-tint: #1a1a1a08;
+  --margin-border: #94a3b8;
+
+  font-family: 'Nunito Sans', 'Avenir Next', Avenir, -apple-system, 'Segoe UI', sans-serif;
+  background: #f7f7f9;
+  color: var(--text-primary);
+  min-height: 100vh;
+  padding: 28px 22px 60px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.vh-root * {
+  box-sizing: border-box;
+}
+
+.vh-wrap {
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.vh-grid {
+  display: grid;
+  grid-template-columns: 1fr 400px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 1200px) {
+  .vh-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.right-col {
+  position: sticky;
+  top: 22px;
+  height: var(--sidebar-match-height, calc(100vh - 44px));
+  max-height: var(--sidebar-match-height, calc(100vh - 44px));
+  overflow-y: auto;
+  padding-right: 8px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.right-col::-webkit-scrollbar {
+  display: none;
+}
+
+.right-col::before,
+.right-col::after {
+  content: "";
+  display: block;
+  height: 18px;
+  pointer-events: none;
+  position: sticky;
+  z-index: 3;
+}
+
+.right-col::before {
+  top: 0;
+  margin-bottom: -18px;
+  background: linear-gradient(to bottom, #f7f7f9, rgba(247, 247, 249, 0));
+}
+
+.right-col::after {
+  bottom: 0;
+  margin-top: -18px;
+  background: linear-gradient(to top, #f7f7f9, rgba(247, 247, 249, 0));
+}
+
+.right-col .vh-card {
+  box-shadow: none;
+}
+
+@media (max-width: 1200px) {
+  .right-col {
+    position: static;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    padding-right: 0;
+  }
+
+  .right-col::before,
+  .right-col::after {
+    display: none;
+  }
+
+  .reset-btn {
+    position: static;
+  }
+}
+
+.vh-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--menu-border);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 14px;
+  overflow: hidden;
+}
+
+.vh-card-title {
+  font-size: var(--vh-text-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.vh-card-sub {
+  font-size: var(--vh-text-xs);
+  color: var(--text-muted);
+  margin: 3px 0 0;
+  line-height: 1.5;
+}
+
+.results-banner {
+  margin-bottom: 14px;
+}
+
+.candidate-summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 170px;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.margin-summary {
+  background: var(--bg-elevated);
+  border: 1px solid var(--menu-border);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  display: grid;
+  grid-template-rows: auto 1fr auto auto 1fr;
+  padding: 12px 14px;
+  text-align: center;
+}
+
+.margin-summary-label {
+  color: var(--text-muted);
+  font-size: var(--vh-text-xs);
+  font-weight: 700;
+  grid-row: 1;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.margin-summary-name {
+  font-size: var(--vh-text-xs);
+  font-weight: 700;
+  grid-row: 3;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.margin-summary-value {
+  font-size: 28px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  grid-row: 4;
+  letter-spacing: -0.02em;
+  margin-top: 3px;
+  line-height: 1;
+}
+
+.margin-summary-name.cornyn,
+.margin-summary-value.cornyn {
+  color: var(--cornyn-strong);
+}
+
+.margin-summary-name.paxton,
+.margin-summary-value.paxton {
+  color: var(--paxton-strong);
+}
+
+@media (max-width: 760px) {
+  .candidate-summary {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cand-bars {
+  background: var(--bg-elevated);
+  border: 1px solid var(--menu-border);
+  border-radius: 16px;
+  box-shadow: var(--card-shadow);
+  padding: 8px 16px;
+}
+
+.cand-row {
+  display: grid;
+  grid-template-columns: 240px 1fr 96px;
+  gap: 14px;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.cand-row+.cand-row {
+  border-top: 1px solid var(--stroke-soft);
+}
+
+.cand-name-block {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.cand-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #f0f0f0;
+  border: 1px solid var(--stroke-soft);
+}
+
+.cand-text {
+  min-width: 0;
+}
+
+.cand-name {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.cand-sub {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.bar-track {
+  height: 22px;
+  background: #fafafa;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  transition: width 0.25s ease;
+}
+
+.cand-pct {
+  text-align: right;
+  font-size: 22px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.cand-votes {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  margin-top: 2px;
+}
+
+.collapsible .card-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 18px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+}
+
+.collapsible .card-header:hover {
+  background: #fafafa;
+}
+
+.card-title-text {
+  font-size: var(--vh-text-sm);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.card-header-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sum-badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: #fafafa;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.chev {
+  color: var(--text-muted);
+  transition: transform 0.2s ease;
+  display: flex;
+  align-items: center;
+}
+
+.chev.open {
+  transform: rotate(180deg);
+}
+
+.card-body {
+  padding: 0 18px 16px;
+  border-top: 1px solid var(--stroke-soft);
+  padding-top: 14px;
+}
+
+.card-sub {
+  font-size: var(--vh-text-xs);
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.sub-section {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--menu-border);
+}
+
+.sub-section:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.sub-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.005em;
+  margin-bottom: 3px;
+}
+
+.sub-section-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.bracket-group {
+  margin-top: 12px;
+}
+
+.bracket-group:first-child {
+  margin-top: 0;
+}
+
+.bracket-group-head {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--stroke-soft);
+}
+
+.slider-row {
+  padding: 11px 0;
+  border-top: 1px solid var(--stroke-soft);
+}
+
+.slider-row:first-of-type {
+  border-top: none;
+  padding-top: 4px;
+}
+
+.slider-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 6px;
+  gap: 12px;
+}
+
+.slider-lbl {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: block;
+}
+
+.slider-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+.slider-val {
+  font-size: 12.5px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.split-leader {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  border: 1px solid;
+  border-radius: 6px;
+  padding: 3px 6px;
+  line-height: 1;
+  background: #fff;
+}
+
+.split-leader.is-cornyn {
+  color: var(--cornyn-strong);
+  background: var(--cornyn-tint);
+  border-color: color-mix(in srgb, var(--cornyn-border) 42%, #fff);
+}
+
+.split-leader.is-paxton {
+  color: var(--paxton-strong);
+  background: var(--paxton-tint);
+  border-color: color-mix(in srgb, var(--paxton-border) 36%, #fff);
+}
+
+.split-leader.is-tie {
+  color: var(--text-secondary);
+  background: #f5f5f5;
+  border-color: var(--stroke-soft);
+}
+
+.split-name {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: currentColor;
+}
+
+.split-num {
+  font-size: 12px;
+  font-weight: 800;
+  color: currentColor;
+}
+
+.vh-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  background: transparent;
+  cursor: pointer;
+  margin: 4px 0 8px;
+  --thumb-color: #ca8a04;
+  --track-bg: var(--stroke-soft);
+}
+
+.vh-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--track-bg);
+  border-radius: 2px;
+}
+
+.vh-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--thumb-color);
+  margin-top: -5px;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.vh-slider::-moz-range-track {
+  height: 4px;
+  background: var(--track-bg);
+  border-radius: 2px;
+}
+
+.vh-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--thumb-color);
+  border: 2px solid #fff;
+}
+
+.slider-under {
+  background: #fafafa;
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-top: 4px;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.data-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.data-row strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.data-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.data-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 11.5px;
+}
+
+.data-line strong {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.data-line.section-head {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px solid var(--stroke-soft);
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+.avg-line {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid var(--stroke-soft);
+  font-weight: 600;
+}
+
+.cornyn-text {
+  color: #a16207;
+}
+
+.paxton-text {
+  color: #dc2626;
+}
+
+.trump-out {
+  margin-top: 12px;
+  padding: 9px 12px;
+  background: #fafafa;
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.reset-btn {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  width: 100%;
+  padding: 11px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--stroke-soft);
+  border-radius: var(--vh-button-radius-lg);
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  cursor: pointer;
+  margin-top: 6px;
+  transition: all 0.2s ease;
+}
+
+.reset-btn:hover {
+  background: #f5f5f7;
+  color: var(--text-primary);
+}
+
+.map-card {
+  padding: 18px;
+}
+
+.map-card-head {
+  margin-bottom: 12px;
+}
+
+.map-placeholder {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  border: 1px dashed var(--menu-border);
+  border-radius: 10px;
+  background: #fafafa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.tx-map {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  min-height: 420px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--menu-border);
+  background: #f0ece4;
+}
+
+.tx-map .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  font-family: inherit;
+}
+
+.error-pane {
+  padding: 20px;
+  background: #fee;
+  border: 1px solid #fcc;
+  color: #c00;
+  font-family: monospace;
+  white-space: pre-wrap;
+  font-size: 13px;
+  margin: 20px;
+  border-radius: 8px;
+}
+
+/* Map hover tooltip — MapLibre Popup */
+.maplibregl-popup.tx-popup .maplibregl-popup-content {
+  background: #ffffff;
+  border: 1px solid #1a1a1a;
+  border-radius: 6px;
+  padding: 8px 11px;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 12px;
+  line-height: 1.4;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08);
+}
+.maplibregl-popup.tx-popup .maplibregl-popup-tip { display: none; }
+.tx-popup-title {
+  font-weight: 700;
+  font-size: 13px;
+  color: #1a1a1a;
+  margin-bottom: 4px;
+  letter-spacing: -0.01em;
+}
+.tx-popup-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: 12px;
+  font-variant-numeric: tabular-nums;
+  font-size: 11.5px;
+  color: #404040;
+}
+.tx-popup-row > span:first-child { color: #404040; }
+.tx-popup-row b { color: #1a1a1a; font-weight: 700; text-align: right; }
+.tx-popup-votes { color: #737373; font-size: 11px; text-align: right; min-width: 56px; }
+.tx-popup-margin { display: flex; justify-content: space-between; margin-top: 3px; padding-top: 3px; border-top: 1px dotted #d4d4d4; font-size: 11px; }
+.tx-popup-margin b { text-align: right; }
+
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+    <script>
+const {
+  useState,
+  useMemo,
+  useEffect,
+  useRef
+} = React;
+
+/* ──────────── ARCGIS ──────────── */
+// Public ArcGIS Online Human Geography vector tile resources.
+// All three styles point at the same underlying service (World_Basemap_v2);
+// the items just supply different style.json files (which source-layers to
+// render and how). No API key needed for public items.
+const ARCGIS_TILE_URL    = "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer/tile/{z}/{y}/{x}.pbf";
+const ARCGIS_GLYPHS_URL  = "https://basemaps.arcgis.com/arcgis/rest/services/World_Basemap_v2/VectorTileServer/resources/fonts/{fontstack}/{range}.pbf";
+const ARCGIS_HG_BASE_STYLE   = "https://www.arcgis.com/sharing/rest/content/items/2afe5b807fa74006be6363fd243ffb30/resources/styles/root.json";
+const ARCGIS_HG_DETAIL_STYLE = "https://www.arcgis.com/sharing/rest/content/items/97fa1365da1e43eabb90d0364326bc2d/resources/styles/root.json";
+const ARCGIS_HG_LABEL_STYLE  = "https://www.arcgis.com/sharing/rest/content/items/ba52238d338745b1a355407ec9df6768/resources/styles/root.json";
+
+/* ──────────── MARGIN COLOR RAMPS ────────────
+   20 steps each, deepest first. Step 1 = blowout, step 20 = near-tie. */
+// Cornyn = gold/yellow shades (matches the gold avatar background #ca8a04).
+const CORNYN_RAMP = [
+  "#663000", "#713500", "#7C3B00", "#874200", "#924900",
+  "#9E5100", "#A95900", "#B46100", "#BF6900", "#C77308",
+  "#CC7D16", "#D18724", "#D69230", "#DB9D43", "#E0A857",
+  "#E5B36B", "#EABE82", "#F0CA9B", "#F5D7B5", "#FDEADC"
+];
+
+// Paxton = red shades (matches the red avatar background #dc2626).
+const PAXTON_RAMP = [
+  "#6B0000", "#770606", "#830B0B", "#8F1111", "#9B1717",
+  "#A71C1C", "#B32222", "#BE2828", "#CA2D2D", "#D63333",
+  "#D94343", "#DC5353", "#DF6363", "#E27373", "#E68383",
+  "#E99494", "#ECA4A4", "#EFB4B4", "#F2C4C4", "#F5D4D4"
+];
+
+// Linear bin: |margin| ∈ [0, 100] → step ∈ [1, 20]. 0 → 20 (lightest), 100 → 1 (deepest).
+function rampStep(absMargin) {
+  const clamped = Math.max(0, Math.min(100, absMargin));
+  return Math.max(1, Math.min(20, Math.round(20 - (clamped / 100) * 19)));
+}
+
+// County fill from Cornyn's margin over Paxton in percentage points
+// (positive = Cornyn ahead → red ramp; negative = Paxton ahead → orange ramp).
+function marginColor(cornynMargin) {
+  const step = rampStep(Math.abs(cornynMargin));
+  return cornynMargin >= 0 ? CORNYN_RAMP[step - 1] : PAXTON_RAMP[step - 1];
+}
+
+/* ──────────── BUCKET DEFINITIONS ────────────
+   Demographics card holds three categories (Income, Age, Education) each
+   broken into its actual brackets. Geography card lists place-type buckets
+   directly. Every bucket gets its own (turnout / electorate / support)
+   triple in state, keyed by bucket id. */
+const INCOME_BUCKETS = [
+  { id: 'income_low',  label: '<$50K' },
+  { id: 'income_mid',  label: '$50K–$100K' },
+  { id: 'income_high', label: '$100K+' }
+];
+
+const EDU_BUCKETS = [
+  { id: 'edu_none',     label: 'No college (HS or less)' },
+  { id: 'edu_some',     label: 'Some college / AA' },
+  { id: 'edu_bachelor', label: "Bachelor's+" }
+];
+
+const DEMO_CATEGORIES = [
+  { title: 'Income',    buckets: INCOME_BUCKETS },
+  { title: 'Education', buckets: EDU_BUCKETS }
+];
+
+const GEO_BUCKETS = [
+  { id: 'urban',  label: 'Urban' },
+  { id: 'suburb', label: 'Suburb' },
+  { id: 'exurb',  label: 'Exurb' },
+  { id: 'rural',  label: 'Rural' }
+];
+
+const ALL_BUCKETS = [
+  ...INCOME_BUCKETS, ...EDU_BUCKETS, ...GEO_BUCKETS
+];
+
+// Distribute First Round: three first-round candidate groups (Cornyn,
+// Paxton, Hunt + third parties), each with Cornyn / Paxton / Did-not-vote
+// runoff allocations that auto-normalize to 100. DNV voters drop out of
+// the runoff electorate entirely, so increasing DNV shrinks the projected
+// turnout.
+const FIRST_ROUND_GROUPS = [
+  { id: 'cornyn', label: 'Cornyn voters' },
+  { id: 'paxton', label: 'Paxton voters' },
+  { id: 'hunt',   label: 'Hunt / third parties' }
+];
+
+const FIRST_ROUND_DEFAULT = {
+  cornyn: { cornyn: 75, paxton: 5,  dnv: 20 },
+  paxton: { cornyn: 5,  paxton: 75, dnv: 20 },
+  hunt:   { cornyn: 20, paxton: 45, dnv: 35 }
+};
+
+const TRUMP_BUCKETS = [{
+  id: 'embrace',
+  label: 'Embraces Trump → Paxton',
+  shareDefault: 46.8,
+  shift: 'higher = bigger Paxton boost'
+}, {
+  id: 'irrelevant',
+  label: 'Endorsement irrelevant',
+  shareDefault: 33.0,
+  shift: 'no directional pull'
+}, {
+  id: 'reject',
+  label: 'Rejects Trump → Cornyn',
+  shareDefault: 20.2,
+  shift: 'higher = bigger Cornyn boost'
+}];
+
+// User-supplied EI bracket Cornyn h2h support defaults (override the crude
+// weighted-h2h estimates that computeBracketDefaults produces).
+const BRACKET_SUPPORT_DEFAULTS = {
+  income_low:   50.33,
+  income_mid:   44.93,
+  income_high:  54.55,
+  edu_none:     48.63,
+  edu_some:     38.00,
+  edu_bachelor: 63.24,
+  urban:        55.51,
+  suburb:       47.16,
+  exurb:        48.36,
+  rural:        47.43
+};
+
+/* ──────────── MODEL ────────────
+   Distribute First Round drives the runoff baseline. For each first-round
+   group g (Cornyn / Paxton / Hunt + others) the user sets three numbers
+   that sum to 100: % to Cornyn, % to Paxton, % did-not-vote.
+
+     runoff Cornyn votes = Σ_g (first-round votes_g × cornyn_g / 100)
+     runoff Paxton votes = Σ_g (first-round votes_g × paxton_g / 100)
+     runoff total        = (above two summed) — DNV voters drop out
+
+   On top of that base h2h, Support and Trump add pp shifts.
+
+   At the user-supplied defaults this projects ~801K Cornyn vs ~873K Paxton
+   = Cornyn 47.86% (Paxton +4.28 pp) with ~77% of first-round turnout. */
+function project(s) {
+  const baseline = s.baseline || {
+    cornynFirstRound: 0, paxtonFirstRound: 0, huntFirstRound: 0,
+    firstRoundCornynPct: 50
+  };
+  const defaults = s.defaults || null;
+
+  // Runoff vote counts from the 3×3 redistribution matrix.
+  const fr = s.firstRoundDistribute;
+  const cFR = +baseline.cornynFirstRound || 0;
+  const pFR = +baseline.paxtonFirstRound || 0;
+  const hFR = +baseline.huntFirstRound   || 0;
+  const runoffCornyn =
+      cFR * (fr.cornyn.cornyn / 100)
+    + pFR * (fr.paxton.cornyn / 100)
+    + hFR * (fr.hunt.cornyn   / 100);
+  const runoffPaxton =
+      cFR * (fr.cornyn.paxton / 100)
+    + pFR * (fr.paxton.paxton / 100)
+    + hFR * (fr.hunt.paxton   / 100);
+  const runoffTotal = runoffCornyn + runoffPaxton;
+  const distributionCornynPct = runoffTotal > 0 ? (runoffCornyn / runoffTotal) * 100 : 50;
+  // Distribute's pp effect relative to first-round h2h, applied uniformly
+  // across counties on the map.
+  const distributeShift = distributionCornynPct - (+baseline.firstRoundCornynPct || 50);
+
+  // Support — three independent views (Income / Education / Geography),
+  // each summing to 100% of the electorate. Cornyn h2h via weighted avg.
+  const catH2H = (buckets, demoState) => {
+    let num = 0, den = 0;
+    for (const b of buckets) {
+      const e = demoState[b.id]?.electorate ?? 0;
+      const t = demoState[b.id]?.turnout    ?? 0;
+      const sup = demoState[b.id]?.support  ?? 50;
+      const w = e * t;
+      num += w * sup;
+      den += w;
+    }
+    return den > 0 ? num / den : 50;
+  };
+  const catShift = (buckets) => defaults
+    ? catH2H(buckets, s.demo) - catH2H(buckets, defaults)
+    : 0;
+  const supportShift =
+      catShift(INCOME_BUCKETS)
+    + catShift(EDU_BUCKETS)
+    + catShift(GEO_BUCKETS);
+
+  // Trump endorsement net shift, scalar 0.30 ⇒ max ±30 pp.
+  const tSum = s.trumpShares.embrace + s.trumpShares.irrelevant + s.trumpShares.reject || 1;
+  const trumpShift = (s.trumpShares.reject - s.trumpShares.embrace) / tSum * 100 * 0.30;
+
+  const cornynPct = Math.max(0, Math.min(100,
+    distributionCornynPct + supportShift + trumpShift
+  ));
+  const paxtonPct = 100 - cornynPct;
+
+  const totalVotes = Math.round(runoffTotal);
+  const totalCornynVotes = Math.round(totalVotes * cornynPct / 100);
+  const totalPaxtonVotes = totalVotes - totalCornynVotes;
+
+  return {
+    cornynPct,
+    paxtonPct,
+    totalCornynVotes,
+    totalPaxtonVotes,
+    supportShift,
+    trumpShift,
+    distributeShift
+  };
+}
+
+/* ──────────── DEFAULTS ──────────── */
+const DEMO_DEFAULT = Object.fromEntries(ALL_BUCKETS.map(b => [b.id, {
+  turnout: 50,
+  electorate: 50,
+  support: 50
+}]));
+
+const TRUMP_DEFAULT = Object.fromEntries(TRUMP_BUCKETS.map(b => [b.id, b.shareDefault]));
+
+/* ──────────── TEXAS MAP ────────────
+   MapLibre GL JS hitting the public ArcGIS Human Geography vector tiles.
+   No API key. The county GeoJSON is enriched at load time with a `margin`
+   property from the precinct CSV's combined runoff predictions, and the
+   county fill uses an interpolate expression over CORNYN_RAMP / PAXTON_RAMP.
+*/
+
+// Build a MapLibre 'interpolate' expression that maps a Cornyn-minus-Paxton
+// margin in percentage points to the 20-step ramps. Reads adjusted_margin
+// from feature-state first (set by slider-driven retints), falls back to
+// the static margin property baked into the feature.
+function buildMarginFillExpression() {
+  const stops = [];
+  for (let i = 0; i < 20; i++) {
+    const m = -50 + i * 2.5;          // -50, -47.5, ..., -2.5
+    stops.push(m, PAXTON_RAMP[i]);
+  }
+  stops.push(0, CORNYN_RAMP[19]);      // exact tie → lightest cornyn
+  for (let i = 1; i <= 20; i++) {
+    const m = i * 2.5;                 // 2.5, 5, ..., 50
+    stops.push(m, CORNYN_RAMP[20 - i]);
+  }
+  return ["interpolate", ["linear"],
+    ["coalesce", ["feature-state", "adjusted_margin"], ["get", "margin"], 0],
+    ...stops];
+}
+
+// Minimal CSV parser — the data file has no quoted commas.
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const headers = lines[0].split(",");
+  const rows = new Array(lines.length - 1);
+  for (let i = 1; i < lines.length; i++) {
+    const vals = lines[i].split(",");
+    const obj = {};
+    for (let j = 0; j < headers.length; j++) obj[headers[j]] = vals[j];
+    rows[i - 1] = obj;
+  }
+  return rows;
+}
+
+// Compute statewide per-bracket defaults from every row (precincts + counties
+// are disjoint — together they cover all 254 TX counties). For each bracket:
+//   support    — Cornyn h2h share, weighted by bracket_share × (cornyn+paxton)
+//   electorate — bracket count / total denominator (hh_total or pop_25_plus)
+//   turnout    — primary turnout of Trump '24, weighted by bracket_share × pop_18+
+// For geography buckets, support is the direct Cornyn h2h within that
+// place_type, electorate is votes-in-place / total votes, turnout is
+// votes-in-place / Trump-24-in-place.
+function computeBracketDefaults(rows) {
+  const f = (r, k) => { const v = +r[k]; return isFinite(v) ? v : 0; };
+
+  let totHH = 0, totPop25 = 0;
+  for (const r of rows) { totHH += f(r, "hh_total"); totPop25 += f(r, "pop_25_plus"); }
+
+  const supportBy = (shareCol) => {
+    let num = 0, den = 0;
+    for (const r of rows) {
+      const c = f(r, "cornyn"), p = f(r, "paxton");
+      if (c + p === 0) continue;
+      const s = f(r, shareCol) / 100;
+      const h2h = (c / (c + p)) * 100;
+      const w = s * (c + p);
+      num += h2h * w; den += w;
+    }
+    return den > 0 ? num / den : 50;
+  };
+  const turnoutBy = (shareCol) => {
+    let num = 0, den = 0;
+    for (const r of rows) {
+      const s = f(r, shareCol) / 100;
+      const pop = f(r, "pop_18_plus");
+      const t = f(r, "primary_turnout_of_trump_pct");
+      const w = s * pop;
+      num += t * w; den += w;
+    }
+    // Runoff turnout runs a hair below primary turnout — pull each
+    // component down by 2 pp as a uniform offset.
+    return den > 0 ? Math.max(0, num / den - 2) : 50;
+  };
+  const electorateBy = (countCol, denom) => {
+    let s = 0;
+    for (const r of rows) s += f(r, countCol);
+    return denom > 0 ? (s / denom) * 100 : 0;
+  };
+
+  // Geography requires summing per place_type across both levels
+  let totVotes = 0;
+  for (const r of rows) totVotes += f(r, "total_2026");
+  const geoStats = (pt) => {
+    let c = 0, p = 0, v = 0, trump = 0;
+    for (const r of rows) {
+      if (r.place_type !== pt) continue;
+      c += f(r, "cornyn"); p += f(r, "paxton");
+      v += f(r, "total_2026"); trump += f(r, "trump_2024");
+    }
+    return {
+      support:    (c + p) > 0 ? (c / (c + p)) * 100 : 50,
+      electorate: totVotes > 0 ? (v / totVotes) * 100 : 0,
+      turnout:    trump > 0 ? Math.max(0, (v / trump) * 100 - 2) : 0
+    };
+  };
+
+  const demo = {
+    income_low:   { support: BRACKET_SUPPORT_DEFAULTS.income_low,   electorate: electorateBy("hh_lt_50k", totHH),      turnout: turnoutBy("inc_lt_50k_share_pct") },
+    income_mid:   { support: BRACKET_SUPPORT_DEFAULTS.income_mid,   electorate: electorateBy("hh_50_100k", totHH),     turnout: turnoutBy("inc_50_100k_share_pct") },
+    income_high:  { support: BRACKET_SUPPORT_DEFAULTS.income_high,  electorate: electorateBy("hh_100k_plus", totHH),   turnout: turnoutBy("inc_100k_plus_share_pct") },
+    edu_none:     { support: BRACKET_SUPPORT_DEFAULTS.edu_none,     electorate: electorateBy("edu_no_college", totPop25),     turnout: turnoutBy("edu_no_college_share_pct") },
+    edu_some:     { support: BRACKET_SUPPORT_DEFAULTS.edu_some,     electorate: electorateBy("edu_some_college", totPop25),   turnout: turnoutBy("edu_some_college_share_pct") },
+    edu_bachelor: { support: BRACKET_SUPPORT_DEFAULTS.edu_bachelor, electorate: electorateBy("edu_bachelor_plus", totPop25),  turnout: turnoutBy("edu_bachelor_plus_share_pct") },
+    urban:  Object.assign(geoStats("Urban"),  { support: BRACKET_SUPPORT_DEFAULTS.urban  }),
+    suburb: Object.assign(geoStats("Suburb"), { support: BRACKET_SUPPORT_DEFAULTS.suburb }),
+    exurb:  Object.assign(geoStats("Exurb"),  { support: BRACKET_SUPPORT_DEFAULTS.exurb  }),
+    rural:  Object.assign(geoStats("Rural"),  { support: BRACKET_SUPPORT_DEFAULTS.rural  })
+  };
+  return demo;
+}
+
+function TexasMap({ geojson, featureAdjustedMargins }) {
+  const containerRef = useRef(null);
+  const mapRef = useRef(null);
+  const adjustedRef = useRef(null);
+  const [mapReady, setMapReady] = useState(false);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container || mapRef.current || !geojson) return;
+    if (typeof maplibregl === "undefined") {
+      console.error("MapLibre GL JS not loaded");
+      return;
+    }
+
+    let cancelled = false;
+
+    Promise.all([
+      fetch(ARCGIS_HG_BASE_STYLE).then(r => r.json()),
+      fetch(ARCGIS_HG_DETAIL_STYLE).then(r => r.json()),
+      fetch(ARCGIS_HG_LABEL_STYLE).then(r => r.json())
+    ]).then(([base, detail, label]) => {
+      if (cancelled) return;
+
+      const fillExpr = buildMarginFillExpression();
+
+      const style = {
+        version: 8,
+        glyphs: ARCGIS_GLYPHS_URL,
+        sources: {
+          esri: {
+            type: "vector",
+            tiles: [ARCGIS_TILE_URL],
+            minzoom: 0,
+            maxzoom: 16
+          },
+          counties: {
+            type: "geojson",
+            data: geojson
+          }
+        },
+        layers: [
+          // 1. ArcGIS Human Geography Base — cream land polygons
+          ...base.layers,
+
+          // 2. County fill — covers every county, including rural ones
+          //    without precinct breakdowns.
+          {
+            id: "county-fill",
+            type: "fill",
+            source: "counties",
+            filter: ["==", ["get", "level"], "county"],
+            paint: {
+              "fill-color": fillExpr,
+              "fill-opacity": 0.6
+            }
+          },
+
+          // 3. Precinct fill — overrides county fill where precinct data exists
+          {
+            id: "precinct-fill",
+            type: "fill",
+            source: "counties",
+            filter: ["==", ["get", "level"], "precinct"],
+            paint: {
+              "fill-color": fillExpr,
+              "fill-opacity": 0.85
+            }
+          },
+
+          // 4. Precinct outlines (very thin, mostly invisible at this zoom)
+          {
+            id: "precinct-outline",
+            type: "line",
+            source: "counties",
+            filter: ["==", ["get", "level"], "precinct"],
+            paint: {
+              "line-color": "#1a1a1a",
+              "line-width": 0.15,
+              "line-opacity": 0.4
+            }
+          },
+
+          // 5. County outline (the major boundaries, drawn over both fills)
+          {
+            id: "county-outline",
+            type: "line",
+            source: "counties",
+            filter: ["==", ["get", "level"], "county"],
+            paint: {
+              "line-color": "#1a1a1a",
+              "line-width": 0.9
+            }
+          },
+
+          // 6. ArcGIS Human Geography Detail — roads, boundaries, water
+          ...detail.layers,
+
+          // 7. ArcGIS Human Geography Label — place names on top
+          ...label.layers
+        ]
+      };
+
+      const map = new maplibregl.Map({
+        container: container,
+        style: style,
+        center: [-99.5, 31.0],
+        zoom: 5,
+        minZoom: 4,
+        maxZoom: 14,
+        attributionControl: false
+      });
+
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+      map.addControl(new maplibregl.AttributionControl({
+        compact: true,
+        customAttribution: "Esri · TomTom · Garmin · FAO · NOAA · USGS · OpenStreetMap"
+      }));
+
+      // Hover tooltip — name + projected Cornyn/Paxton (which reflects the
+      // current slider state via the adjustedRef ref). Uses MapLibre Popup
+      // anchored to the cursor.
+      const popup = new maplibregl.Popup({
+        closeButton: false,
+        closeOnClick: false,
+        offset: 8,
+        maxWidth: "260px",
+        className: "tx-popup"
+      });
+
+      const showTip = e => {
+        const f = e.features?.[0];
+        if (!f) return;
+        const props = f.properties || {};
+        const adj = adjustedRef.current?.get(f.id);
+        const baseM = +props.margin;
+        const m = (adj != null && isFinite(adj))
+          ? Math.max(-100, Math.min(100, adj))
+          : (isFinite(baseM) ? baseM : null);
+        const cornynPct = m != null ? Math.max(0, Math.min(100, 50 + m / 2)) : null;
+        const paxtonPct = cornynPct != null ? 100 - cornynPct : null;
+        // Project votes by scaling the baseline first-round Cornyn+Paxton
+        // total according to the adjusted percentage split.
+        const baseVotes = (+props.cornynVotes || 0) + (+props.paxtonVotes || 0);
+        const cornynVotes = (cornynPct != null && baseVotes > 0) ? Math.round(baseVotes * cornynPct / 100) : null;
+        const paxtonVotes = (paxtonPct != null && baseVotes > 0) ? baseVotes - cornynVotes : null;
+        const lvl = props.level === "county" ? "" : ` · ${props.county || ""}`;
+        const lines = [
+          `<div class="tx-popup-title">${props.name || props.county || "?"}${lvl}</div>`
+        ];
+        if (cornynPct != null) {
+          const fmt = v => v != null ? v.toLocaleString() : "";
+          lines.push(
+            `<div class="tx-popup-row"><span>Cornyn</span><b>${cornynPct.toFixed(1)}%</b><span class="tx-popup-votes">${fmt(cornynVotes)}</span></div>` +
+            `<div class="tx-popup-row"><span>Paxton</span><b>${paxtonPct.toFixed(1)}%</b><span class="tx-popup-votes">${fmt(paxtonVotes)}</span></div>` +
+            `<div class="tx-popup-row tx-popup-margin"><span>Margin</span><b>${m > 0 ? "+" : ""}${m.toFixed(1)} pp ${m > 0 ? "→ Cornyn" : m < 0 ? "→ Paxton" : ""}</b></div>`
+          );
+        } else {
+          lines.push(`<div class="tx-popup-row"><span>No data</span></div>`);
+        }
+        popup.setLngLat(e.lngLat).setHTML(lines.join("")).addTo(map);
+      };
+      const hideTip = () => popup.remove();
+
+      map.on("mousemove", "county-fill",   showTip);
+      map.on("mousemove", "precinct-fill", showTip);
+      map.on("mouseleave", "county-fill",   hideTip);
+      map.on("mouseleave", "precinct-fill", hideTip);
+      map.on("mouseenter", "county-fill",   () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", "county-fill",   () => map.getCanvas().style.cursor = "");
+      map.on("mouseenter", "precinct-fill", () => map.getCanvas().style.cursor = "pointer");
+      map.on("mouseleave", "precinct-fill", () => map.getCanvas().style.cursor = "");
+
+      map.on("load", () => {
+        setMapReady(true);
+        console.log("Map ready");
+      });
+      map.on("error", e => console.error("Map error:", e?.error || e));
+
+      mapRef.current = map;
+    }).catch(err => console.error("Map init failed:", err));
+
+    return () => {
+      cancelled = true;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+        setMapReady(false);
+      }
+    };
+  }, [geojson]);
+
+  // Apply per-feature adjusted margins via setFeatureState whenever the
+  // featureAdjustedMargins Map changes. Mirror into adjustedRef so the
+  // hover tooltip (attached once at init) can read the latest values.
+  useEffect(() => {
+    adjustedRef.current = featureAdjustedMargins;
+    const map = mapRef.current;
+    if (!map || !featureAdjustedMargins || !mapReady) return;
+    for (const [id, adjMargin] of featureAdjustedMargins) {
+      map.setFeatureState(
+        { source: "counties", id },
+        { adjusted_margin: adjMargin }
+      );
+    }
+  }, [featureAdjustedMargins, mapReady]);
+
+  return /*#__PURE__*/React.createElement("div", {
+    ref: containerRef,
+    className: "tx-map"
+  });
+}
+
+/* ──────────── COMPONENT ──────────── */
+function TXRunoffForecast() {
+  const leftColRef = useRef(null);
+  const rightColRef = useRef(null);
+
+  const [demo, setDemo] = useState(DEMO_DEFAULT);
+  const [trumpShares, setTrumpShares] = useState(TRUMP_DEFAULT);
+  const [firstRoundDistribute, setFirstRoundDistribute] = useState(FIRST_ROUND_DEFAULT);
+  const [mapData, setMapData] = useState(null);
+
+  // One-shot data load: fetch the merged geojson and the precinct CSV,
+  // join CSV rows to features (both counties and precincts), compute the
+  // statewide baseline estimate AND per-bracket defaults, then override
+  // the demo state so every slider starts where the data says it should.
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetch("tx_2026_gop_senate_merged.geojson").then(r => r.json()),
+      fetch("tx_precinct_with_matrix.csv").then(r => r.text())
+    ]).then(([gj, csvText]) => {
+      if (cancelled) return;
+      const rows = parseCSV(csvText);
+
+      // Manual place_type overrides. Bell County (Killeen–Temple, Fort Hood
+      // commuter belt) reads as Suburb rather than whatever the CSV ships.
+      const PLACE_TYPE_OVERRIDES = {
+        bell: "Suburb"
+      };
+      for (const r of rows) {
+        const key = (r.county || "").toLowerCase().trim();
+        if (PLACE_TYPE_OVERRIDES[key]) r.place_type = PLACE_TYPE_OVERRIDES[key];
+      }
+
+      const countyLookup = new Map();
+      const precinctLookup = new Map();
+
+      for (const r of rows) {
+        // Per-row first-round head-to-head — respects who actually won
+        // each precinct/county in March. pred_*_combined was flipping
+        // signs in some Cornyn-winning places, so use raw votes.
+        const cornyn = +r.cornyn || 0;
+        const paxton = +r.paxton || 0;
+        const tot = cornyn + paxton;
+        const cornynH2H = tot > 0 ? (cornyn / tot) * 100 : 50;
+        const margin = tot > 0 ? ((cornyn - paxton) / tot) * 100 : 0;
+        const entry = {
+          margin,
+          c: cornynH2H,
+          p: 100 - cornynH2H,
+          cornynVotes: cornyn,
+          paxtonVotes: paxton,
+          trump: +r.trump_2024 || 0,
+          name: r.name,
+          place_type: r.place_type,
+          inc_low_share:  +r.inc_lt_50k_share_pct    || 0,
+          inc_mid_share:  +r.inc_50_100k_share_pct   || 0,
+          inc_high_share: +r.inc_100k_plus_share_pct || 0,
+          edu_none_share: +r.edu_no_college_share_pct    || 0,
+          edu_some_share: +r.edu_some_college_share_pct  || 0,
+          edu_bach_share: +r.edu_bachelor_plus_share_pct || 0
+        };
+        if (r.level === "county") {
+          countyLookup.set((r.county || "").toLowerCase().trim(), entry);
+        } else if (r.level === "precinct") {
+          const key = `${(r.county || "").toLowerCase().trim()}|${r.precinct_label}`;
+          precinctLookup.set(key, entry);
+        }
+      }
+
+      // Statewide first-round head-to-head: who actually won between
+      // Cornyn and Paxton across all 254 counties. Used as the bar baseline
+      // (sliders adjust on top). Precincts + county rows are disjoint.
+      let swCornynVotes = 0, swPaxtonVotes = 0;
+      let frC = 0, frP = 0, frOther = 0, frTotal = 0;
+      for (const r of rows) {
+        const cornyn = +r.cornyn || 0;
+        const paxton = +r.paxton || 0;
+        swCornynVotes += cornyn;
+        swPaxtonVotes += paxton;
+        // First-round shares: `total_2026 = cornyn + paxton + other_2026`.
+        // `other_2026` is Hunt + minor candidates combined — exactly the
+        // universe the "Hunt / third parties" slider represents.
+        frC     += cornyn;
+        frP     += paxton;
+        frOther += +r.other_2026 || 0;
+        frTotal += +r.total_2026 || 0;
+      }
+      const firstRoundShares = frTotal > 0 ? {
+        cornyn: frC / frTotal,
+        paxton: frP / frTotal,
+        hunt:   frOther / frTotal
+      } : { cornyn: 0.42, paxton: 0.405, hunt: 0.175 };
+
+      // Stamp margin and data fields onto the geojson features.
+      // Also assign a stable numeric id so MapLibre setFeatureState can
+      // target each feature for slider-driven retinting.
+      for (let i = 0; i < gj.features.length; i++) {
+        const f = gj.features[i];
+        f.id = i;
+        const props = f.properties || {};
+        let row;
+        if (props.level === "county") {
+          row = countyLookup.get((props.county || props.name || "").toLowerCase().trim());
+        } else if (props.level === "precinct") {
+          row = precinctLookup.get(`${(props.county || "").toLowerCase().trim()}|${props.precinct_label}`);
+        }
+        if (row) Object.assign(props, row);
+      }
+
+      const swTotal = swCornynVotes + swPaxtonVotes;
+      const cornynPct = swTotal > 0 ? (swCornynVotes / swTotal) * 100 : 50;
+      const dataDefaults = computeBracketDefaults(rows);
+
+      console.log(
+        `Statewide baseline · Cornyn ${cornynPct.toFixed(2)}% · ` +
+        `Paxton ${(100 - cornynPct).toFixed(2)}% · ` +
+        `votes ${Math.round(swCornynVotes).toLocaleString()} vs ${Math.round(swPaxtonVotes).toLocaleString()}`
+      );
+      console.log(
+        `First-round shares · Cornyn ${(firstRoundShares.cornyn * 100).toFixed(2)}% · ` +
+        `Paxton ${(firstRoundShares.paxton * 100).toFixed(2)}% · ` +
+        `Hunt/3p ${(firstRoundShares.hunt * 100).toFixed(2)}%`
+      );
+      console.log("Bracket defaults:", dataDefaults);
+
+      setMapData({
+        geojson: gj,
+        baseline: {
+          cornynPct,
+          paxtonPct: 100 - cornynPct,
+          cornynVotes: Math.round(swCornynVotes),
+          paxtonVotes: Math.round(swPaxtonVotes),
+          // First-round totals — used by project() to apply the runoff
+          // redistribution model (Cornyn / Paxton / Hunt groups × DNV).
+          cornynFirstRound: frC,
+          paxtonFirstRound: frP,
+          huntFirstRound:   frOther,
+          firstRoundCornynPct: (frC + frP) > 0 ? (frC / (frC + frP)) * 100 : 50,
+          firstRoundTotal: frTotal
+        },
+        defaults: dataDefaults,
+        firstRoundShares
+      });
+      // Override the all-50 placeholder slider state with data-derived defaults.
+      setDemo(dataDefaults);
+    }).catch(err => console.error("Data load failed:", err));
+    return () => { cancelled = true; };
+  }, []);
+
+  // Set one of (cornyn, paxton, dnv) for a group; the other two shrink/grow
+  // proportionally to keep the triple at 100.
+  const updateFirstRound = (groupId, which, value) => {
+    const v = Math.max(0, Math.min(100, value));
+    setFirstRoundDistribute(prev => {
+      const group = prev[groupId];
+      const others = ['cornyn', 'paxton', 'dnv'].filter(k => k !== which);
+      const otherSum = others.reduce((s, k) => s + (group[k] || 0), 0);
+      const remainder = Math.max(0, 100 - v);
+      const nextGroup = { ...group, [which]: v };
+      if (otherSum > 0) {
+        others.forEach(k => { nextGroup[k] = (group[k] / otherSum) * remainder; });
+      } else {
+        others.forEach(k => { nextGroup[k] = remainder / others.length; });
+      }
+      return { ...prev, [groupId]: nextGroup };
+    });
+  };
+
+  // Three update modes:
+  //  • turnout    → bracket's electorate scales by (newT/oldT), then the
+  //                 whole category renormalizes to 100. More turnout in a
+  //                 group ⇒ more electorate share for that group.
+  //  • electorate → user is editing the share directly; siblings shrink
+  //                 to keep the category at 100.
+  //  • support    → simple set, no normalization.
+  const updateDemo = (bucketId, field, value, categoryBuckets) => {
+    if (field === 'turnout' && categoryBuckets && categoryBuckets.length > 1) {
+      setDemo(prev => {
+        const oldT = prev[bucketId].turnout || 0.0001;
+        const newT = Math.max(0, value);
+        const scale = oldT > 0 ? (newT / oldT) : 1;
+        const unnorm = {};
+        for (const b of categoryBuckets) {
+          const baseE = prev[b.id].electorate || 0;
+          unnorm[b.id] = b.id === bucketId ? baseE * scale : baseE;
+        }
+        const total = Object.values(unnorm).reduce((s, v) => s + v, 0);
+        const next = { ...prev };
+        next[bucketId] = { ...prev[bucketId], turnout: newT };
+        if (total > 0) {
+          for (const b of categoryBuckets) {
+            next[b.id] = { ...next[b.id], electorate: (unnorm[b.id] / total) * 100 };
+          }
+        }
+        return next;
+      });
+    } else if (field === 'electorate' && categoryBuckets && categoryBuckets.length > 1) {
+      setDemo(prev => {
+        const v = Math.max(0, Math.min(100, value));
+        const others = categoryBuckets.filter(b => b.id !== bucketId).map(b => b.id);
+        const otherSum = others.reduce((s, oid) => s + (prev[oid]?.electorate || 0), 0);
+        const remainder = Math.max(0, 100 - v);
+        const next = { ...prev };
+        next[bucketId] = { ...next[bucketId], electorate: v };
+        if (otherSum > 0) {
+          others.forEach(oid => {
+            next[oid] = { ...next[oid], electorate: (prev[oid].electorate / otherSum) * remainder };
+          });
+        } else {
+          others.forEach(oid => {
+            next[oid] = { ...next[oid], electorate: remainder / others.length };
+          });
+        }
+        return next;
+      });
+    } else {
+      setDemo(prev => ({
+        ...prev,
+        [bucketId]: { ...prev[bucketId], [field]: value }
+      }));
+    }
+  };
+
+  const setTrumpShare = (id, newValue) => {
+    const others = TRUMP_BUCKETS.filter(b => b.id !== id).map(b => b.id);
+    const otherSum = others.reduce((s, oid) => s + trumpShares[oid], 0);
+    const remainder = Math.max(0, 100 - newValue);
+    const next = { [id]: newValue };
+    if (otherSum > 0) {
+      others.forEach(oid => {
+        next[oid] = trumpShares[oid] / otherSum * remainder;
+      });
+    } else {
+      others.forEach(oid => {
+        next[oid] = remainder / others.length;
+      });
+    }
+    setTrumpShares(next);
+  };
+
+  // Per-bucket slider for a single metric (support / electorate / turnout).
+  // `categoryBuckets` lets electorate auto-normalize across siblings.
+  const bucketSlider = (b, metric, categoryBuckets) => {
+    const isSupport = metric === 'support';
+    return /*#__PURE__*/React.createElement(SliderRow, {
+      key: b.id,
+      label: b.label,
+      value: demo[b.id][metric],
+      onChange: v => updateDemo(b.id, metric, v, categoryBuckets),
+      max: 100,
+      step: 1,
+      suffix: isSupport ? '' : '%',
+      showSplit: isSupport,
+      color: isSupport ? '#ca8a04' : '#1a1a1a'
+    });
+  };
+
+  const result = useMemo(() => project({
+    demo,
+    trumpShares,
+    firstRoundDistribute,
+    baseline: mapData?.baseline,
+    defaults: mapData?.defaults,
+    firstRoundShares: mapData?.firstRoundShares
+  }), [demo, trumpShares, firstRoundDistribute, mapData]);
+
+  // Per-feature adjusted margins for the map. SUPPORT sliders shift each
+  // feature by its own demographic composition (income/edu shares + the
+  // single place_type the feature belongs to). Trump + Distribute shift
+  // every feature uniformly (statewide voter-mood concepts).
+  // Electorate + Turnout sliders only affect the statewide bars, not the
+  // per-feature margins — they reweight the aggregate, not the locals.
+  const featureAdjustedMargins = useMemo(() => {
+    if (!mapData?.geojson || !mapData?.defaults) return null;
+    const defs = mapData.defaults;
+    const uniformCornynShift = result.trumpShift + result.distributeShift;
+
+    const supDev = (id) => (demo[id]?.support ?? 50) - (defs[id]?.support ?? 50);
+    const ptToId = { Urban: "urban", Suburb: "suburb", Exurb: "exurb", Rural: "rural" };
+
+    const out = new Map();
+    for (const f of mapData.geojson.features) {
+      const props = f.properties;
+      if (!props || props.margin == null) continue;
+
+      // Income contribution — weighted by feature's own income shares.
+      const incContrib =
+          ((props.inc_low_share  || 0) / 100) * supDev("income_low")
+        + ((props.inc_mid_share  || 0) / 100) * supDev("income_mid")
+        + ((props.inc_high_share || 0) / 100) * supDev("income_high");
+
+      // Education contribution.
+      const eduContrib =
+          ((props.edu_none_share || 0) / 100) * supDev("edu_none")
+        + ((props.edu_some_share || 0) / 100) * supDev("edu_some")
+        + ((props.edu_bach_share || 0) / 100) * supDev("edu_bachelor");
+
+      // Geography contribution — full weight on the feature's place_type.
+      const ptId = ptToId[props.place_type];
+      const geoContrib = ptId ? supDev(ptId) : 0;
+
+      const cornynShift = incContrib + eduContrib + geoContrib + uniformCornynShift;
+      out.set(f.id, (+props.margin) + 2 * cornynShift);
+    }
+    return out;
+  }, [demo, result.trumpShift, result.distributeShift, mapData]);
+
+  useEffect(() => {
+    const leftCol = leftColRef.current;
+    const rightCol = rightColRef.current;
+    if (!leftCol || !rightCol) return;
+    const syncSidebarToLeftColumn = () => {
+      if (window.matchMedia('(max-width: 1200px)').matches) {
+        rightCol.style.removeProperty('--sidebar-match-height');
+        return;
+      }
+      rightCol.style.setProperty('--sidebar-match-height',
+        `${Math.round(leftCol.getBoundingClientRect().height)}px`);
+    };
+    const rafSync = () => requestAnimationFrame(syncSidebarToLeftColumn);
+    syncSidebarToLeftColumn();
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(rafSync) : null;
+    resizeObserver?.observe(leftCol);
+    window.addEventListener('resize', rafSync);
+    return () => {
+      resizeObserver?.disconnect();
+      window.removeEventListener('resize', rafSync);
+    };
+  }, []);
+
+  const winner = result.cornynPct > 50 ? 'Cornyn' : result.cornynPct < 50 ? 'Paxton' : 'Tie';
+  const winnerClass = winner === 'Cornyn' ? 'cornyn' : winner === 'Paxton' ? 'paxton' : '';
+  const marginAbs = Math.abs(result.cornynPct - result.paxtonPct).toFixed(1);
+
+  return /*#__PURE__*/React.createElement("div", {
+    className: "vh-root"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "vh-wrap"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "vh-grid"
+  }, /*#__PURE__*/React.createElement("div", {
+    ref: leftColRef,
+    className: "left-col"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "results-banner"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "candidate-summary"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cand-bars"
+  }, /*#__PURE__*/React.createElement(CandRow, {
+    name: "John Cornyn",
+    sub: "Incumbent",
+    pct: result.cornynPct,
+    votes: result.totalCornynVotes,
+    color: "#ca8a04",
+    avatar: "cornyn.jpg"
+  }), /*#__PURE__*/React.createElement(CandRow, {
+    name: "Ken Paxton",
+    sub: "Trump-endorsed challenger",
+    pct: result.paxtonPct,
+    votes: result.totalPaxtonVotes,
+    color: "#dc2626",
+    avatar: "paxton.jpg"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "margin-summary"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "margin-summary-label"
+  }, "Margin"), /*#__PURE__*/React.createElement("div", {
+    className: `margin-summary-name ${winnerClass}`
+  }, winner), /*#__PURE__*/React.createElement("div", {
+    className: `margin-summary-value ${winnerClass}`
+  }, winner === 'Tie' ? marginAbs : `+${marginAbs}`)))),
+
+  /* ──────────── MAP SLOT (placeholder, no data yet) ──────────── */
+  /*#__PURE__*/React.createElement("div", {
+    className: "vh-card map-card"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "map-card-head"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "vh-card-title"
+  }, "Margin by County")), /*#__PURE__*/React.createElement(TexasMap, { geojson: mapData?.geojson, featureAdjustedMargins }))),
+
+  /* ──────────── RIGHT COLUMN ──────────── */
+  /*#__PURE__*/React.createElement("div", {
+    ref: rightColRef,
+    className: "right-col"
+  },
+    // Group 1: Demographics — Income / Age / Education categories, each with
+    // their own brackets. Divided by metric: Support / Electorate / Turnout.
+    /*#__PURE__*/React.createElement(CollapsibleCard, {
+      title: "Demographics",
+      defaultOpen: false
+    },
+      /*#__PURE__*/React.createElement(SubSection, {
+        title: "Support",
+        sub: "Cornyn's share within each bracket. 50 = tie."
+      }, DEMO_CATEGORIES.map(cat =>
+        /*#__PURE__*/React.createElement("div", { key: cat.title, className: "bracket-group" },
+          /*#__PURE__*/React.createElement("div", { className: "bracket-group-head" }, cat.title),
+          cat.buckets.map(b => bucketSlider(b, 'support', cat.buckets))
+        )
+      )),
+      /*#__PURE__*/React.createElement(SubSection, {
+        title: "Electorate",
+        sub: "Share of the runoff electorate each bracket represents."
+      }, DEMO_CATEGORIES.map(cat =>
+        /*#__PURE__*/React.createElement("div", { key: cat.title, className: "bracket-group" },
+          /*#__PURE__*/React.createElement("div", { className: "bracket-group-head" }, cat.title),
+          cat.buckets.map(b => bucketSlider(b, 'electorate', cat.buckets))
+        )
+      )),
+      /*#__PURE__*/React.createElement(SubSection, {
+        title: "Turnout",
+        sub: "% of each bracket that actually shows up in the runoff."
+      }, DEMO_CATEGORIES.map(cat =>
+        /*#__PURE__*/React.createElement("div", { key: cat.title, className: "bracket-group" },
+          /*#__PURE__*/React.createElement("div", { className: "bracket-group-head" }, cat.title),
+          cat.buckets.map(b => bucketSlider(b, 'turnout', cat.buckets))
+        )
+      ))
+    ),
+
+    // Group 2: Endorsement & First Round
+    /*#__PURE__*/React.createElement(CollapsibleCard, {
+      title: "Endorsement & First Round",
+      defaultOpen: false
+    },
+      /*#__PURE__*/React.createElement(SubSection, {
+        title: "Trump Endorsement",
+        sub: "Auto-normalizes to 100. Reaction buckets across the GOP primary electorate."
+      },
+        TRUMP_BUCKETS.map(b => /*#__PURE__*/React.createElement(SliderRow, {
+          key: b.id,
+          label: b.label,
+          hint: b.shift,
+          value: trumpShares[b.id],
+          onChange: v => setTrumpShare(b.id, v),
+          max: 100,
+          step: 0.5,
+          suffix: "%",
+          color: b.id === 'embrace' ? '#dc2626' : b.id === 'reject' ? '#ca8a04' : '#737373'
+        })),
+        /*#__PURE__*/React.createElement("div", {
+          className: "trump-out"
+        }, "Margin shift:", /*#__PURE__*/React.createElement("strong", {
+          style: {
+            color: result.trumpShift > 0 ? '#a16207' : result.trumpShift < 0 ? '#dc2626' : '#737373',
+            marginLeft: 6
+          }
+        }, result.trumpShift > 0 ? '+' : '', result.trumpShift.toFixed(1), " pp ",
+          result.trumpShift > 0 ? '→ Cornyn' : result.trumpShift < 0 ? '→ Paxton' : ''))
+      ),
+      /*#__PURE__*/React.createElement(SubSection, {
+        title: "Distribute First Round",
+        sub: "Where each first-round candidate's voters go in the runoff. Each pair auto-normalizes to 100."
+      },
+        FIRST_ROUND_GROUPS.map(g =>
+          /*#__PURE__*/React.createElement("div", { key: g.id, className: "bracket-group" },
+            /*#__PURE__*/React.createElement("div", { className: "bracket-group-head" }, g.label),
+            /*#__PURE__*/React.createElement(SliderRow, {
+              label: "→ Cornyn",
+              value: firstRoundDistribute[g.id].cornyn,
+              onChange: v => updateFirstRound(g.id, 'cornyn', v),
+              max: 100, step: 1,
+              suffix: "%",
+              color: "#ca8a04"
+            }),
+            /*#__PURE__*/React.createElement(SliderRow, {
+              label: "→ Paxton",
+              value: firstRoundDistribute[g.id].paxton,
+              onChange: v => updateFirstRound(g.id, 'paxton', v),
+              max: 100, step: 1,
+              suffix: "%",
+              color: "#dc2626"
+            }),
+            /*#__PURE__*/React.createElement(SliderRow, {
+              label: "→ Did not vote",
+              value: firstRoundDistribute[g.id].dnv,
+              onChange: v => updateFirstRound(g.id, 'dnv', v),
+              max: 100, step: 1,
+              suffix: "%",
+              color: "#737373"
+            })
+          )
+        ),
+        /*#__PURE__*/React.createElement("div", {
+          className: "trump-out"
+        }, "Margin shift:", /*#__PURE__*/React.createElement("strong", {
+          style: {
+            color: result.distributeShift > 0 ? '#a16207' : result.distributeShift < 0 ? '#dc2626' : '#737373',
+            marginLeft: 6
+          }
+        }, result.distributeShift > 0 ? '+' : '', result.distributeShift.toFixed(1), " pp ",
+          result.distributeShift > 0 ? '→ Cornyn' : result.distributeShift < 0 ? '→ Paxton' : ''))
+      )
+    ),
+
+    // Group 3: Geography — Urban, Suburb, Exurb, Rural
+    // Same metric-first division as Demographics.
+    /*#__PURE__*/React.createElement(CollapsibleCard, {
+      title: "Geography",
+      defaultOpen: false
+    },
+      /*#__PURE__*/React.createElement(SubSection, {
+        title: "Support",
+        sub: "Cornyn's share within each place type. 50 = tie."
+      }, GEO_BUCKETS.map(b => bucketSlider(b, 'support', GEO_BUCKETS))),
+      /*#__PURE__*/React.createElement(SubSection, {
+        title: "Electorate",
+        sub: "Share of the runoff electorate each place type represents."
+      }, GEO_BUCKETS.map(b => bucketSlider(b, 'electorate', GEO_BUCKETS))),
+      /*#__PURE__*/React.createElement(SubSection, {
+        title: "Turnout",
+        sub: "% of each place type that actually shows up in the runoff."
+      }, GEO_BUCKETS.map(b => bucketSlider(b, 'turnout', GEO_BUCKETS)))
+    ),
+
+    /*#__PURE__*/React.createElement("button", {
+      className: "reset-btn",
+      onClick: () => {
+        setDemo(mapData?.defaults || DEMO_DEFAULT);
+        setTrumpShares(TRUMP_DEFAULT);
+        setFirstRoundDistribute(FIRST_ROUND_DEFAULT);
+      }
+    }, "Reset All Levers")
+  ))));
+}
+
+/* ──────────── SUB-SECTION ────────────
+   Inline section header inside a group card. Used to break a card body into
+   labeled blocks (Support / Electorate / Turnout) without nested cards. */
+function SubSection({ title, sub, children }) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "sub-section"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "sub-section-title"
+  }, title), sub && /*#__PURE__*/React.createElement("div", {
+    className: "sub-section-sub"
+  }, sub), children);
+}
+
+function CollapsibleCard({
+  title,
+  defaultOpen,
+  sumBadge,
+  children
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "vh-card collapsible"
+  }, /*#__PURE__*/React.createElement("button", {
+    className: "card-header",
+    onClick: () => setOpen(!open)
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "card-title-text"
+  }, title), /*#__PURE__*/React.createElement("div", {
+    className: "card-header-right"
+  }, sumBadge && /*#__PURE__*/React.createElement("span", {
+    className: "sum-badge"
+  }, sumBadge), /*#__PURE__*/React.createElement("span", {
+    className: `chev ${open ? 'open' : ''}`
+  }, /*#__PURE__*/React.createElement("svg", {
+    width: "12",
+    height: "12",
+    viewBox: "0 0 12 12"
+  }, /*#__PURE__*/React.createElement("path", {
+    d: "M3 4.5L6 7.5L9 4.5",
+    stroke: "currentColor",
+    strokeWidth: "1.5",
+    fill: "none",
+    strokeLinecap: "round",
+    strokeLinejoin: "round"
+  }))))), open && /*#__PURE__*/React.createElement("div", {
+    className: "card-body"
+  }, children));
+}
+
+function CandRow({
+  name,
+  sub,
+  pct,
+  votes,
+  color,
+  avatar
+}) {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "cand-row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cand-name-block"
+  }, avatar && /*#__PURE__*/React.createElement("img", {
+    className: "cand-avatar",
+    src: avatar,
+    alt: name,
+    loading: "lazy"
+  }), /*#__PURE__*/React.createElement("div", {
+    className: "cand-text"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cand-name",
+    style: { color }
+  }, name), /*#__PURE__*/React.createElement("div", {
+    className: "cand-sub"
+  }, sub))), /*#__PURE__*/React.createElement("div", {
+    className: "bar-track"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "bar-fill",
+    style: {
+      width: `${pct}%`,
+      background: color
+    }
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "cand-num-block"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "cand-pct",
+    style: { color }
+  }, pct.toFixed(1), "%"), /*#__PURE__*/React.createElement("div", {
+    className: "cand-votes"
+  }, votes.toLocaleString())));
+}
+
+function SliderRow({
+  label,
+  hint,
+  value,
+  onChange,
+  max,
+  step = 0.1,
+  suffix = '',
+  color = '#ca8a04',
+  under,
+  showSplit = false
+}) {
+  const numericValue = Number(value);
+  const cornynLeads = numericValue > 50;
+  const paxtonLeads = numericValue < 50;
+  const splitLeader = cornynLeads ? 'Cornyn' : paxtonLeads ? 'Paxton' : 'Tie';
+  const splitLeaderPct = Math.max(numericValue, 100 - numericValue).toFixed(0);
+  const splitColor = cornynLeads ? '#a16207' : paxtonLeads ? '#dc2626' : '#737373';
+  const splitTrack = `linear-gradient(to right, #dc2626 0%, #dc2626 50%, #ca8a04 50%, #ca8a04 100%)`;
+  const splitValue = showSplit ? /*#__PURE__*/React.createElement("span", {
+    className: `split-leader ${cornynLeads ? 'is-cornyn' : paxtonLeads ? 'is-paxton' : 'is-tie'}`
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "split-name"
+  }, splitLeader), /*#__PURE__*/React.createElement("span", {
+    className: "split-num"
+  }, splitLeaderPct, "%")) : `${numericValue.toFixed(step >= 1 ? 0 : 1)}${suffix}`;
+  return /*#__PURE__*/React.createElement("div", {
+    className: "slider-row"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "slider-head"
+  }, /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("span", {
+    className: "slider-lbl"
+  }, label), hint && /*#__PURE__*/React.createElement("span", {
+    className: "slider-hint"
+  }, hint)), /*#__PURE__*/React.createElement("span", {
+    className: "slider-val",
+    style: showSplit ? undefined : { color }
+  }, splitValue)), /*#__PURE__*/React.createElement("input", {
+    type: "range",
+    className: "vh-slider",
+    min: 0,
+    max: max,
+    step: step,
+    value: value,
+    onChange: e => onChange(+e.target.value),
+    style: {
+      '--thumb-color': showSplit ? splitColor : color,
+      '--track-bg': showSplit ? splitTrack : undefined
+    }
+  }), under && /*#__PURE__*/React.createElement("div", {
+    className: "slider-under"
+  }, under));
+}
+
+try {
+  ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(TXRunoffForecast, null));
+} catch (e) {
+  console.error(e);
+  document.getElementById('root').innerHTML = '<div class="error-pane">' + e.message + '\n\n' + (e.stack || '') + '</div>';
+}
+
+    </script>
+</body>
+
+</html>
